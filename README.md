@@ -44,13 +44,13 @@ publica un hash, se comprueba antes de usar el archivo.
 Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USUARIO/open-mc-host/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/IzanLey/OPEN-MINECRAFT-HOST/main/install.sh | bash
 ```
 
 Windows (PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/USUARIO/open-mc-host/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/IzanLey/OPEN-MINECRAFT-HOST/main/install.ps1 | iex
 ```
 
 El instalador copia `omh.py` en tu carpeta de usuario, crea el comando `omh` y
@@ -59,8 +59,8 @@ muestra el titulo con la guia del primer paso.
 Tambien puedes usarlo sin instalar nada:
 
 ```bash
-git clone https://github.com/USUARIO/open-mc-host.git
-cd open-mc-host
+git clone https://github.com/IzanLey/OPEN-MINECRAFT-HOST.git
+cd OPEN-MINECRAFT-HOST
 python omh.py
 ```
 
@@ -268,20 +268,6 @@ omh update
   distribuciones puede faltar alguna libreria (por ejemplo `libcurl`).
 - Forge y NeoForge: la instalacion tarda unos minutos. Si falla, revisa
   `<carpeta del servidor>/.omh/installer.log`.
-
-
-## Publicar este proyecto en GitHub
-
-1. Crea un repositorio vacio llamado `open-mc-host` en https://github.com/new
-2. Cambia `USUARIO` por tu usuario de GitHub en `omh.py`, `install.sh`,
-   `install.ps1` y este `README.md`.
-3. Sube el codigo:
-
-```bash
-git remote add origin https://github.com/USUARIO/open-mc-host.git
-git branch -M main
-git push -u origin main
-```
 
 
 ## Licencia

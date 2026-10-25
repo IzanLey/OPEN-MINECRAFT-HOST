@@ -1,9 +1,9 @@
 # Instalador de open-mc-host para Windows (PowerShell).
-# Uso: irm https://raw.githubusercontent.com/USUARIO/open-mc-host/main/install.ps1 | iex
+# Uso: irm https://raw.githubusercontent.com/IzanLey/OPEN-MINECRAFT-HOST/main/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$Repo = if ($env:OMH_REPO) { $env:OMH_REPO } else { 'USUARIO/open-mc-host' }
+$Repo = if ($env:OMH_REPO) { $env:OMH_REPO } else { 'IzanLey/OPEN-MINECRAFT-HOST' }
 $Branch = if ($env:OMH_BRANCH) { $env:OMH_BRANCH } else { 'main' }
 $InstallDir = Join-Path $env:LOCALAPPDATA 'open-mc-host'
 $Url = "https://raw.githubusercontent.com/$Repo/$Branch/omh.py"

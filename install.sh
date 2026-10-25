@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Instalador de open-mc-host para Linux.
-# Uso: curl -fsSL https://raw.githubusercontent.com/USUARIO/open-mc-host/main/install.sh | bash
+# Uso: curl -fsSL https://raw.githubusercontent.com/IzanLey/OPEN-MINECRAFT-HOST/main/install.sh | bash
 set -euo pipefail
 
-REPO="${OMH_REPO:-USUARIO/open-mc-host}"
+REPO="${OMH_REPO:-IzanLey/OPEN-MINECRAFT-HOST}"
 BRANCH="${OMH_BRANCH:-main}"
 INSTALL_DIR="$HOME/.local/share/open-mc-host"
 BIN_DIR="$HOME/.local/bin"
