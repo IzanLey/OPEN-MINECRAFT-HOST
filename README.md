@@ -20,6 +20,8 @@
                     |_| |_| \___/ |____/  |_|
 ```
 
+Version 0.0.1
+
 Herramienta de terminal para convertir tu PC en un servidor de Minecraft.
 Funciona en Windows y Linux. Es un solo archivo de Python (`omh.py`) que solo
 usa la libreria estandar, asi que no hay que instalar dependencias.
@@ -154,17 +156,63 @@ Formas de abrir el servidor a internet:
 
 - `playit`: usa https://playit.gg, un servicio de tuneles gratuito que te da
   una direccion publica gratis (por ejemplo `algo.joinmc.link`). No hace falta
-  tocar el router y funciona aunque tu proveedor no te de IP publica. La primera
-  vez:
-  1. Ejecuta `omh tunnel`. Aparece `Visit link to setup https://playit.gg/claim/...`.
-  2. Abre ese enlace, entra o crea tu cuenta gratuita y acepta el agente.
-  3. En https://playit.gg/account/tunnels crea un tunel `Minecraft Java` (o
-     `Minecraft Bedrock`) con IP local `127.0.0.1` y el puerto de tu servidor.
-  4. La web muestra la direccion publica (por ejemplo `algo.joinmc.link`).
-     Esa es la que usan tus amigos. Pulsa Ctrl+C para cerrar `omh tunnel`.
+  tocar el router y funciona aunque tu proveedor no te de IP publica. Es la
+  opcion que hay que usar en redes de instituto, universidad o trabajo, y en
+  cualquier red donde el router no permita abrir puertos. Ver la seccion
+  "Activar playit.gg (solo la primera vez)".
+- `upnp`: abre el puerto en tu router de forma automatica al iniciar y lo
+  cierra al parar. El router debe tener UPnP activado.
+- `manual`: abres tu el puerto en el router. Los jugadores usan tu IP publica.
 
-  Despues `omh start` arranca el tunel automaticamente. La clave del agente se
-  guarda en `~/.open-mc-host/playit.toml`, nunca en el repositorio.
+Si el firewall bloquea las conexiones, el comando muestra la orden exacta para
+permitir el puerto (hay que ejecutarla como administrador). La herramienta no
+cambia el firewall por su cuenta.
+
+### Activar playit.gg (solo la primera vez)
+
+1. Inicia el servidor con `omh start` (o ejecuta `omh tunnel`).
+2. `omh status` muestra un enlace del tipo `https://playit.gg/claim/xxxxxxxxxx`.
+   Abrelo en el navegador y entra o crea tu cuenta gratuita.
+3. La web pide aprobar el programa. Pulsa el boton de aprobar. El agente
+   aparece con un nombre automatico (por ejemplo `from-key-1234`); no hace
+   falta copiarlo en ningun sitio.
+4. Entra en https://playit.gg/account/tunnels y pulsa "Add tunnel":
+   - Tipo: `Minecraft Java` (o `Minecraft Bedrock` si el servidor es Bedrock).
+   - Agente: el que acabas de aprobar.
+   - IP local `127.0.0.1` y el puerto de tu servidor (por defecto `25565`).
+5. La web muestra la direccion publica del tunel (por ejemplo
+   `algo.joinmc.link`). Esa es la direccion que usan tus amigos.
+
+Para comprobar que quedo bien, mira `<carpeta del servidor>/.omh/playit.log`:
+debe decir `tunnel running, 1 tunnels registered`.
+
+Despues de esto no hay que repetir nada: cada `omh start` abre el tunel solo y
+la direccion no cambia. La clave del agente se guarda en
+`~/.open-mc-host/playit.toml`, nunca en el repositorio.
+
+
+## Conectarse al servidor
+
+Antes de que entre un jugador:
+
+- El servidor debe estar iniciado (`omh status` dice `EN EJECUCION`).
+- El jugador debe abrir Minecraft en la misma version que el servidor
+  (por ejemplo, servidor 1.14.1 -> Minecraft 1.14.1).
+- Si la whitelist esta activada, anadelo con su nombre de Java:
+  `omh whitelist add NombreDelJugador`. Es el nombre que sale en el Minecraft
+  Launcher, no el de Xbox ni el email de Microsoft.
+
+En Minecraft: Multijugador -> Anadir servidor -> escribe la direccion:
+
+| Desde donde                   | Direccion                                         |
+|-------------------------------|---------------------------------------------------|
+| El mismo PC del servidor      | `127.0.0.1:25565`                                 |
+| Otro PC en la misma red       | La IP de "Red local (LAN)" de `omh status`        |
+| Internet (modo public)        | La direccion del tunel de playit.gg o tu IP publica |
+
+En redes de instituto, universidad, trabajo o wifis publicas los dispositivos
+no suelen poder verse entre si. En ese caso usa la direccion de playit.gg
+aunque esteis conectados a la misma wifi.
 - `upnp`: abre el puerto en tu router de forma automatica al iniciar y lo
   cierra al parar. El router debe tener UPnP activado.
 - `manual`: abres tu el puerto en el router. Los jugadores usan tu IP publica.
@@ -268,6 +316,17 @@ omh update
 
 ## Problemas frecuentes
 
+- Se queda en "Connecting to the server": la conexion no llega al servidor.
+  - Si usas playit.gg, comprueba con `omh status` que no aparezca
+    "playit.gg sin vincular" y que hayas creado el tunel en la web.
+  - Si usas la IP de la red local, puede que tu wifi aisle a los dispositivos.
+    Usa playit.gg.
+  - Comprueba que el firewall permite el puerto (la orden la muestra
+    `omh network`).
+- "That player does not exist" al anadir a la whitelist: ese nombre no es una
+  cuenta de Minecraft Java. Usa el nombre que sale en el Minecraft Launcher.
+- "Outdated client" u "Outdated server": el jugador usa otra version de
+  Minecraft. Debe usar la misma que el servidor.
 - "El puerto esta ocupado": usa `omh network --port auto`.
 - Windows y Bedrock vanilla: para entrar desde el mismo PC donde corre el
   servidor, Windows necesita una excepcion de loopback (como administrador):
@@ -276,6 +335,14 @@ omh update
   distribuciones puede faltar alguna libreria (por ejemplo `libcurl`).
 - Forge y NeoForge: la instalacion tarda unos minutos. Si falla, revisa
   `<carpeta del servidor>/.omh/installer.log`.
+
+
+## Versiones
+
+- 0.0.1: primera version. Servidores Java (vanilla, paper, purpur, fabric,
+  forge, neoforge) y Bedrock (vanilla, pocketmine, nukkit), los 3 comandos de
+  configuracion, whitelist, administradores, plugins/mods y tunel gratuito de
+  playit.gg.
 
 
 ## Licencia

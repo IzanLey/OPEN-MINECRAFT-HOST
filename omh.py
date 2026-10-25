@@ -38,7 +38,7 @@ if sys.version_info < (3, 8):
     sys.exit(1)
 
 APP_NAME = "open-mc-host"
-APP_VERSION = "1.0.0"
+APP_VERSION = "0.0.1"
 GITHUB_REPO = "IzanLey/OPEN-MINECRAFT-HOST"
 RAW_URL = "https://raw.githubusercontent.com/%s/main/omh.py" % GITHUB_REPO
 USER_AGENT = "%s/%s (https://github.com/%s)" % (APP_NAME, APP_VERSION, GITHUB_REPO)
