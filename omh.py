@@ -1365,7 +1365,13 @@ def server_addresses(cfg):
         lines.append("Red local (LAN): %s:%s" % (lan_ip(), port))
     if n.get("mode") == "public":
         if n.get("public_method") == "playit":
-            lines.append("Internet:       la direccion que te da playit.gg (ver: omh tunnel)")
+            log = "\n".join(tail_lines(os.path.join(cfg["dir"], RUN_DIR, "playit.log"), 20))
+            claim = re.search(r"https://playit\.gg/claim/\S+", log)
+            if claim:
+                lines.append("Internet:       NO DISPONIBLE. playit.gg sin vincular: abre %s" % claim.group(0))
+                lines.append("                y crea un tunel Minecraft Java hacia 127.0.0.1:%s" % port)
+            else:
+                lines.append("Internet:       la direccion de tu tunel en https://playit.gg/account/tunnels")
         else:
             lines.append("Internet:       %s:%s" % (public_ip() or "IP-PUBLICA", port))
     return lines
