@@ -1272,8 +1272,18 @@ def upnp_external_ip(gateway):
         return None
 
 
+# La serie 1.0 de playit es un servicio que necesita otro programa para vincularse.
+# La 0.17.1 (tambien mantenida) muestra el enlace de vinculacion en la terminal.
+PLAYIT_VERSION = "v0.17.1"
+
+
 def playit_path():
-    return os.path.join(HOME_DIR, "tools", "playit.exe" if IS_WIN else "playit")
+    return os.path.join(HOME_DIR, "tools", "playit-%s%s" % (PLAYIT_VERSION, ".exe" if IS_WIN else ""))
+
+
+def playit_command(exe):
+    # La clave del agente se guarda fuera de cualquier repositorio, siempre en el mismo sitio.
+    return [exe, "--secret_path", os.path.join(HOME_DIR, "playit.toml"), "--stdout", "start"]
 
 
 def ensure_playit():
@@ -1281,7 +1291,8 @@ def ensure_playit():
     if os.path.exists(exe):
         return exe
     osname, arch = platform_ids()
-    release = github_latest_release("playit-cloud/playit-agent")
+    release = get_json("https://api.github.com/repos/playit-cloud/playit-agent/releases/tags/" + PLAYIT_VERSION,
+                       {"Accept": "application/vnd.github+json"})
     arch_keys = ("x86_64", "amd64") if arch == "x64" else ("aarch64", "arm64")
     best = None
     for a in release["assets"]:
@@ -1304,11 +1315,16 @@ def ensure_playit():
 
 def cmd_tunnel(args):
     exe = ensure_playit()
-    info("Abriendo el agente de playit.gg. La primera vez muestra un enlace para vincularlo")
-    info("a tu cuenta gratuita. En la web crea un tunel de tipo Minecraft (Java o Bedrock)")
-    info("apuntando a 127.0.0.1 y al puerto de tu servidor. Pulsa Ctrl+C para salir.")
+    info("Abriendo el agente de playit.gg.")
+    info("1. La primera vez aparece 'Visit link to setup https://playit.gg/claim/...'.")
+    info("   Abre ese enlace, crea tu cuenta gratuita (o entra) y acepta el agente.")
+    info("2. En https://playit.gg/account/tunnels crea un tunel 'Minecraft Java' o")
+    info("   'Minecraft Bedrock' con IP local 127.0.0.1 y el puerto de tu servidor.")
+    info("3. La web te muestra la direccion publica (por ejemplo algo.joinmc.link).")
+    info("   Esa es la direccion que deben usar tus amigos.")
+    info("Cuando este vinculado pulsa Ctrl+C. 'omh start' lanzara el tunel solo.")
     try:
-        subprocess.call([exe])
+        subprocess.call(playit_command(exe))
     except KeyboardInterrupt:
         pass
 
@@ -1606,12 +1622,17 @@ class Runner:
                 self.gateway = None
         elif n["public_method"] == "playit":
             exe = ensure_playit()
-            log = open(os.path.join(self.dir, RUN_DIR, "playit.log"), "ab")
+            log_path = os.path.join(self.dir, RUN_DIR, "playit.log")
+            log = open(log_path, "wb")
             kwargs = {"stdin": subprocess.DEVNULL, "stdout": log, "stderr": subprocess.STDOUT}
             if IS_WIN:
                 kwargs["creationflags"] = 0x08000000  # CREATE_NO_WINDOW
-            self.extra.append(subprocess.Popen([exe], **kwargs))
+            self.extra.append(subprocess.Popen(playit_command(exe), **kwargs))
             self.say("Tunel playit.gg iniciado (registro en .omh/playit.log).")
+            time.sleep(4)
+            claim = re.search(r"https://playit\.gg/claim/\S+", "\n".join(tail_lines(log_path, 50)))
+            if claim:
+                self.say("playit.gg aun no esta vinculado. Abre %s o ejecuta: omh tunnel" % claim.group(0))
 
     def stop_network(self):
         n = self.cfg["network"]

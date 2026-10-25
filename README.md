@@ -155,9 +155,16 @@ Formas de abrir el servidor a internet:
 - `playit`: usa https://playit.gg, un servicio de tuneles gratuito que te da
   una direccion publica gratis (por ejemplo `algo.joinmc.link`). No hace falta
   tocar el router y funciona aunque tu proveedor no te de IP publica. La primera
-  vez ejecuta `omh tunnel`, abre el enlace que aparece para vincularlo con tu
-  cuenta gratuita y crea un tunel de tipo Minecraft hacia `127.0.0.1` y el
-  puerto de tu servidor. Despues `omh start` arranca el tunel automaticamente.
+  vez:
+  1. Ejecuta `omh tunnel`. Aparece `Visit link to setup https://playit.gg/claim/...`.
+  2. Abre ese enlace, entra o crea tu cuenta gratuita y acepta el agente.
+  3. En https://playit.gg/account/tunnels crea un tunel `Minecraft Java` (o
+     `Minecraft Bedrock`) con IP local `127.0.0.1` y el puerto de tu servidor.
+  4. La web muestra la direccion publica (por ejemplo `algo.joinmc.link`).
+     Esa es la que usan tus amigos. Pulsa Ctrl+C para cerrar `omh tunnel`.
+
+  Despues `omh start` arranca el tunel automaticamente. La clave del agente se
+  guarda en `~/.open-mc-host/playit.toml`, nunca en el repositorio.
 - `upnp`: abre el puerto en tu router de forma automatica al iniciar y lo
   cierra al parar. El router debe tener UPnP activado.
 - `manual`: abres tu el puerto en el router. Los jugadores usan tu IP publica.
@@ -242,6 +249,7 @@ omh update
 | `<carpeta del servidor>/.omh/`     | Registro de consola y datos de ejecucion     |
 | `~/.open-mc-host/java/`            | Versiones de Java descargadas                |
 | `~/.open-mc-host/tools/`           | Agente de playit.gg                          |
+| `~/.open-mc-host/playit.toml`      | Clave del agente de playit.gg (privada)      |
 | `~/.open-mc-host/state.json`       | Lista de servidores y servidor activo        |
 
 
