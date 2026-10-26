@@ -257,6 +257,211 @@ pub fn read_text_lossy(path: &Path) -> io::Result<String> {
     fs::read(path).map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
 }
 
+/// Fecha y hora local como `time.strftime("%Y-%m-%d %H:%M:%S")`.
+pub fn local_timestamp() -> String {
+    chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
+// ---------------------------------------------------------------------------
+// Rutas como os.path de Python
+// ---------------------------------------------------------------------------
+
+fn is_sep(c: char) -> bool {
+    c == '/' || (cfg!(windows) && c == '\\')
+}
+
+/// Quita la letra de unidad (`C:`) como `ntpath.splitdrive`; en Linux no hace nada.
+fn without_drive(path: &str) -> &str {
+    if cfg!(windows) && path.as_bytes().get(1) == Some(&b':') {
+        &path[2..]
+    } else {
+        path
+    }
+}
+
+/// `os.path.basename`: en Windows tambien corta por `\` y quita la unidad.
+pub fn py_basename(path: &str) -> &str {
+    let path = without_drive(path);
+    match path.rfind(is_sep) {
+        Some(i) => &path[i + 1..],
+        None => path,
+    }
+}
+
+/// `os.path.relpath` para una ruta que esta dentro de `base` (con el separador del sistema).
+pub fn relpath(path: &Path, base: &Path) -> String {
+    let path = abspath(path);
+    match path.strip_prefix(abspath(base)) {
+        Ok(rel) if rel.as_os_str().is_empty() => ".".to_owned(),
+        Ok(rel) => rel.to_string_lossy().into_owned(),
+        Err(_) => path.to_string_lossy().into_owned(),
+    }
+}
+
+/// `os.path.expanduser`: `~` y `~usuario` al principio de la ruta.
+pub fn expanduser(path: &str) -> PathBuf {
+    if !path.starts_with('~') {
+        return PathBuf::from(path);
+    }
+    let end = path[1..].find(is_sep).map_or(path.len(), |i| i + 1);
+    match user_home(&path[1..end]) {
+        Some(home) => join_home(home, &path[end..]),
+        None => PathBuf::from(path),
+    }
+}
+
+#[cfg(windows)]
+fn user_home(user: &str) -> Option<PathBuf> {
+    let mut home = match env::var_os("USERPROFILE") {
+        Some(profile) => PathBuf::from(profile),
+        None => {
+            let homepath = env::var_os("HOMEPATH")?;
+            PathBuf::from(env::var_os("HOMEDRIVE").unwrap_or_default()).join(homepath)
+        }
+    };
+    if !user.is_empty() {
+        let current = env::var("USERNAME").ok();
+        if current.as_deref() != Some(user) {
+            // Como Python: se supone que los perfiles estan todos en la misma carpeta.
+            let home_name = home.file_name().map(|n| n.to_string_lossy().into_owned());
+            if current != home_name {
+                return None;
+            }
+            home = home.parent()?.join(user);
+        }
+    }
+    Some(home)
+}
+
+#[cfg(windows)]
+fn join_home(home: PathBuf, rest: &str) -> PathBuf {
+    let mut joined = home.into_os_string();
+    joined.push(rest);
+    PathBuf::from(joined)
+}
+
+#[cfg(not(windows))]
+fn user_home(user: &str) -> Option<PathBuf> {
+    if user.is_empty()
+        && let Some(home) = env::var_os("HOME")
+    {
+        return Some(PathBuf::from(home));
+    }
+    crate::platform::passwd_home(user)
+}
+
+#[cfg(not(windows))]
+fn join_home(home: PathBuf, rest: &str) -> PathBuf {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let mut bytes = home.into_os_string().into_vec();
+    while bytes.last() == Some(&b'/') {
+        bytes.pop();
+    }
+    bytes.extend_from_slice(rest.as_bytes());
+    if bytes.is_empty() {
+        bytes.push(b'/');
+    }
+    PathBuf::from(OsString::from_vec(bytes))
+}
+
+/// Compara nombres de archivo como `fnmatch`: sin distinguir mayusculas en Windows.
+pub fn name_key(name: &str) -> Cow<'_, str> {
+    if cfg!(windows) {
+        Cow::Owned(name.to_lowercase())
+    } else {
+        Cow::Borrowed(name)
+    }
+}
+
+/// Recorre `root` como `os.walk` (de arriba abajo, en el orden del sistema de
+/// archivos y sin entrar en enlaces a carpetas) hasta que `found` devuelve algo
+/// para una carpeta y sus archivos.
+pub fn walk_find<T, F>(root: &Path, found: &mut F) -> Option<T>
+where
+    F: FnMut(&Path, &[String]) -> Option<T>,
+{
+    let entries = fs::read_dir(root).ok()?;
+    let mut dirs = Vec::new();
+    let mut files = Vec::new();
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.path().is_dir() {
+            let is_link = entry.file_type().is_ok_and(|kind| kind.is_symlink());
+            dirs.push((name, is_link));
+        } else {
+            files.push(name);
+        }
+    }
+    if let Some(hit) = found(root, &files) {
+        return Some(hit);
+    }
+    dirs.into_iter()
+        .filter(|(_, is_link)| !is_link)
+        .find_map(|(name, _)| walk_find(&root.join(name), found))
+}
+
+/// `glob.glob(carpeta/patron)`: entradas no ocultas de `dir` cuyo nombre cumple
+/// `matches`, en el orden del sistema de archivos.
+pub fn glob_names(dir: &Path, matches: &dyn Fn(&str) -> bool) -> Vec<PathBuf> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    entries
+        .flatten()
+        .filter(|entry| {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            !name.starts_with('.') && matches(&name)
+        })
+        .map(|entry| entry.path())
+        .collect()
+}
+
+/// `glob.glob(carpeta/**/patron, recursive=True)`: la carpeta y todas sus
+/// subcarpetas no ocultas, de arriba abajo.
+pub fn glob_recursive(dir: &Path, matches: &dyn Fn(&str) -> bool) -> Vec<PathBuf> {
+    let mut found = glob_names(dir, matches);
+    for sub in glob_names(dir, &|_| true) {
+        let is_link = fs::symlink_metadata(&sub).is_ok_and(|meta| meta.file_type().is_symlink());
+        if sub.is_dir() && !is_link {
+            found.extend(glob_recursive(&sub, matches));
+        }
+    }
+    found
+}
+
+// ---------------------------------------------------------------------------
+// URLs como urllib.parse
+// ---------------------------------------------------------------------------
+
+/// `urllib.parse.quote(texto, safe)`: todo como `%XX` salvo letras, numeros,
+/// `_.-~` y los caracteres de `safe`.
+pub fn py_quote(text: &str, safe: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for byte in text.bytes() {
+        let keep = byte.is_ascii_alphanumeric()
+            || b"_.-~".contains(&byte)
+            || (byte.is_ascii() && safe.contains(char::from(byte)));
+        if keep {
+            out.push(char::from(byte));
+        } else {
+            out.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    out
+}
+
+/// `urllib.parse.urlencode` con los pares en orden (espacios como `+`).
+pub fn urlencode(pairs: &[(&str, &str)]) -> String {
+    let quote_plus = |text: &str| py_quote(text, " ").replace(' ', "+");
+    pairs
+        .iter()
+        .map(|(key, value)| format!("{}={}", quote_plus(key), quote_plus(value)))
+        .collect::<Vec<_>>()
+        .join("&")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -465,5 +670,80 @@ mod tests {
             "a\nb\n"
         };
         assert_eq!(native_newlines("a\nb\n"), expected);
+    }
+
+    // Valores de os.path y urllib.parse de Python en cada sistema.
+    #[test]
+    fn basename_como_python() {
+        assert_eq!(py_basename("y.jar"), "y.jar");
+        assert_eq!(py_basename("/srv/x/"), "");
+        if cfg!(windows) {
+            assert_eq!(py_basename(r"C:\x\y.jar"), "y.jar");
+            assert_eq!(py_basename(r"a/b\c.jar"), "c.jar");
+            assert_eq!(py_basename("C:"), "");
+        } else {
+            assert_eq!(py_basename(r"C:\x\y.jar"), r"C:\x\y.jar");
+            assert_eq!(py_basename(r"a/b\c.jar"), r"b\c.jar");
+            assert_eq!(py_basename("C:"), "C:");
+        }
+    }
+
+    #[test]
+    fn relpath_con_el_separador_del_sistema() {
+        let base = env::current_dir().unwrap();
+        let expected = if cfg!(windows) { r"a\b\c" } else { "a/b/c" };
+        assert_eq!(
+            relpath(&base.join("a").join("b").join("c"), &base),
+            expected
+        );
+        assert_eq!(relpath(&base, &base), ".");
+    }
+
+    #[test]
+    fn expanduser_como_python() {
+        assert_eq!(expanduser("x/~"), PathBuf::from("x/~"));
+        assert_ne!(expanduser("~"), PathBuf::from("~"));
+        assert_ne!(expanduser("~/a"), PathBuf::from("~/a"));
+        // Un usuario que no existe: Linux deja la ruta igual; Windows supone que su
+        // perfil esta junto al del usuario actual.
+        let unknown = "~nadie_que_exista_123/a";
+        assert_eq!(expanduser(unknown) == Path::new(unknown), !cfg!(windows));
+    }
+
+    #[test]
+    fn quote_y_urlencode_como_python() {
+        assert_eq!(py_quote("worldedit", "/"), "worldedit");
+        assert_eq!(py_quote("foo bar/baz", "/"), "foo%20bar/baz");
+        assert_eq!(py_quote("caf\u{e9}", "/"), "caf%C3%A9");
+        assert_eq!(py_quote("a+b&c=d", "/"), "a%2Bb%26c%3Dd");
+        assert_eq!(py_quote("~x_y.z-", "/"), "~x_y.z-");
+        assert_eq!(
+            urlencode(&[
+                ("loaders", "[\"paper\", \"spigot\", \"bukkit\", \"purpur\"]"),
+                ("game_versions", "[\"1.21.1\"]")
+            ]),
+            "loaders=%5B%22paper%22%2C+%22spigot%22%2C+%22bukkit%22%2C+%22purpur%22%5D&game_versions=%5B%221.21.1%22%5D"
+        );
+    }
+
+    #[test]
+    fn recorridos_como_os_walk_y_glob() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join("jre").join("bin")).unwrap();
+        fs::create_dir_all(root.join(".oculta")).unwrap();
+        fs::write(root.join("jre").join("bin").join("java"), "").unwrap();
+        fs::write(root.join("a.jar"), "").unwrap();
+        fs::write(root.join(".oculta").join("b.jar"), "").unwrap();
+        fs::write(root.join("jre").join("c.jar"), "").unwrap();
+
+        let found = walk_find(root, &mut |dir: &Path, files: &[String]| {
+            (dir.file_name().is_some_and(|n| n == "bin") && files.iter().any(|f| f == "java"))
+                .then(|| dir.join("java"))
+        });
+        assert_eq!(found, Some(root.join("jre").join("bin").join("java")));
+
+        let jars = glob_recursive(root, &|name: &str| name.ends_with(".jar"));
+        assert_eq!(jars, [root.join("a.jar"), root.join("jre").join("c.jar")]);
     }
 }

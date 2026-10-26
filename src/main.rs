@@ -17,10 +17,17 @@
 // comando. Se quita en la fase 5, cuando estan conectados todos.
 #![allow(dead_code)]
 
+mod catalog;
 mod cli;
 mod config;
+mod cores;
+mod create;
 mod error;
+mod extract;
+mod http;
+mod java;
 mod platform;
+mod plugins;
 mod pyjson;
 mod runner;
 mod servers;
@@ -53,6 +60,10 @@ fn main() -> ExitCode {
 
 fn run(command: Command) -> anyhow::Result<()> {
     match command {
+        Command::Create(args) => create::cmd_create(&args),
+        Command::List => catalog::cmd_list(),
+        Command::Eula(args) => create::cmd_eula(&args),
+        Command::Plugin(args) => plugins::cmd_plugin(&args),
         Command::Servers => servers::cmd_servers(),
         Command::Use(args) => servers::cmd_use(&args.target),
         _ => Err(error::fail("Este comando aun no esta portado a Rust.")),

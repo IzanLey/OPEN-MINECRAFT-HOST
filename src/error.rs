@@ -7,11 +7,26 @@ pub enum OmhError {
     /// Equivalente a `fail(msg)` de la version Python: el mensaje se muestra tal cual.
     #[error("{0}")]
     Fail(String),
+    /// Respuesta HTTP que no es 2xx (`urllib.error.HTTPError`).
+    #[error("El servidor remoto respondio {code} ({url}).")]
+    Http { code: u16, url: String },
+    /// No se pudo conectar o se corto la conexion (`urllib.error.URLError`).
+    #[error("Error de red: {0}. Comprueba tu conexion a internet.")]
+    Network(String),
 }
 
 /// Crea el error de `fail(msg)`.
 pub fn fail(msg: impl Into<String>) -> anyhow::Error {
     OmhError::Fail(msg.into()).into()
+}
+
+/// Codigo HTTP si el error es una respuesta de error de un servidor.
+pub fn http_status(err: &anyhow::Error) -> Option<u16> {
+    err.chain()
+        .find_map(|e| match e.downcast_ref::<OmhError>() {
+            Some(OmhError::Http { code, .. }) => Some(*code),
+            _ => None,
+        })
 }
 
 /// Texto que se muestra tras `[ERROR] `. Si en la cadena hay un error propio de omh
@@ -34,6 +49,26 @@ mod tests {
             .context("al cargar")
             .unwrap_err();
         assert_eq!(user_message(&err), "Falta el paso 2.");
+    }
+
+    #[test]
+    fn errores_http_y_de_red_como_python() {
+        let err: anyhow::Error = OmhError::Http {
+            code: 404,
+            url: "https://x/y".into(),
+        }
+        .into();
+        assert_eq!(
+            user_message(&err),
+            "El servidor remoto respondio 404 (https://x/y)."
+        );
+        assert_eq!(http_status(&err), Some(404));
+        let err: anyhow::Error = OmhError::Network("sin conexion".into()).into();
+        assert_eq!(
+            user_message(&err),
+            "Error de red: sin conexion. Comprueba tu conexion a internet."
+        );
+        assert_eq!(http_status(&err), None);
     }
 
     #[test]

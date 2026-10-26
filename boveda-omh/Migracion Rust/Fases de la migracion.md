@@ -13,7 +13,7 @@ Rama `rust-rewrite`, un commit por fase. Al terminar cada fase: `cargo build`, `
   - `cli.rs` con los 19 subcomandos y sus opciones; `main.rs` con códigos de salida; `ui.rs` (título, guía, mensajes, ask/confirm, Ctrl+C); `error.rs`; `util.rs`; `pyjson.rs`; `config.rs`; `platform.rs` (carpeta de usuario).
   - Funcionan: `omh`, `omh --version`, `omh --help`, `omh servers`, `omh use`.
   - Tests: tamaños, versiones, `server.properties`, JSON de Python, título idéntico, `splitlines`, `abspath`.
-- [ ] **Fase 2: create + list + eula**
+- [x] **Fase 2: create + list + eula**
   - `http.rs` (descargas con sha1/sha256), `extract.rs`, `java.rs`, `catalog.rs`, `cores/` (los 9).
   - Además `omh plugin`, porque usa las mismas piezas (HTTP, catálogo).
   - Tests: extracción segura (zip/tar con `../`, rutas absolutas, enlaces), `resolve_version` sin red, verificación de hash.
