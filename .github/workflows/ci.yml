@@ -49,3 +49,55 @@ jobs:
 
       - name: Compilar en release
         run: cargo build --release
+
+  musl:
+    name: Build Linux musl (release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Instalar toolchain de Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Cachear dependencias de Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Instalar musl-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Compilar el binario estatico
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+          AR_x86_64_unknown_linux_musl: ar
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Comprobar que es estatico y arranca
+        run: |
+          file target/x86_64-unknown-linux-musl/release/omh
+          file target/x86_64-unknown-linux-musl/release/omh | grep -Eq "static(-pie)?(ally)? linked"
+          target/x86_64-unknown-linux-musl/release/omh --version
+
+  windows-crt:
+    name: Build Windows CRT estatico (release)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Instalar toolchain de Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cachear dependencias de Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar con CRT estatico
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static
+        run: cargo build --release --target x86_64-pc-windows-msvc

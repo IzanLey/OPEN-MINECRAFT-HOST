@@ -17,6 +17,11 @@ fi
 URL="$BASE_URL/$ASSET"
 SUMS_URL="$BASE_URL/SHA256SUMS"
 
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "Este instalador es solo para Linux. En Windows usa install.ps1."
+    exit 1
+fi
+
 ARCH="$(uname -m)"
 case "$ARCH" in
     x86_64 | amd64) ;;
@@ -85,8 +90,9 @@ fi
 
 mkdir -p "$BIN_DIR"
 chmod +x "$TMP_DIR/$ASSET"
-# mv en un solo paso: si la descarga se corto antes, no queda un binario a medias.
-mv -f "$TMP_DIR/$ASSET" "$TARGET"
+# Se copia junto al destino y se renombra: el cambio es atomico (mismo sistema de archivos).
+cp "$TMP_DIR/$ASSET" "$TARGET.new"
+mv -f "$TARGET.new" "$TARGET"
 
 echo "open-mc-host instalado en $TARGET"
 

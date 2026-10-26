@@ -76,7 +76,16 @@ if (Test-Path $Exe) {
         return
     }
 }
-Move-Item -Force -Path $NewExe -Destination $Exe
+try {
+    Move-Item -Force -Path $NewExe -Destination $Exe -ErrorAction Stop
+} catch {
+    if ((Test-Path $OldExe) -and -not (Test-Path $Exe)) {
+        Move-Item -Force -Path $OldExe -Destination $Exe -ErrorAction SilentlyContinue
+    }
+    Write-Host 'No se pudo instalar omh.exe (antivirus o archivo bloqueado). Se mantiene la version anterior.'
+    Write-Host "La descarga queda en $NewExe."
+    return
+}
 
 # Restos de la instalacion antigua de Python en esta misma carpeta.
 Remove-Item -Force -ErrorAction SilentlyContinue -Path (Join-Path $InstallDir 'omh.cmd'), (Join-Path $InstallDir 'omh.py')

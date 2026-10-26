@@ -8,6 +8,7 @@ aliases: [GitHub Actions, CI, release]
 ## `.github/workflows/ci.yml`
 - Se ejecuta en `push` y `pull_request`.
 - Matriz `ubuntu-latest` + `windows-latest`: toolchain estable con `clippy` y `rustfmt`, caché de cargo, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` y `cargo build --release`.
+- Jobs `musl` y `windows-crt` que repiten los dos builds del release (`x86_64-unknown-linux-musl` con `musl-gcc` y Windows con CRT estático), para que un fallo se vea en cada push y no al crear el tag.
 - Permisos mínimos (`contents: read`).
 
 ## `.github/workflows/release.yml`
