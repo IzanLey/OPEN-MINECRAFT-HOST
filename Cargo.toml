@@ -1,0 +1,32 @@
+[package]
+name = "open-mc-host"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "Convierte tu PC en un servidor de Minecraft (Java o Bedrock) desde la terminal"
+license = "MIT"
+repository = "https://github.com/IzanLey/OPEN-MINECRAFT-HOST"
+readme = "README.md"
+publish = false
+
+[[bin]]
+name = "omh"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+ctrlc = "3.5.2"
+dirs = "7.0.0"
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+thiserror = "2.0.21"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+
+[dev-dependencies]
+tempfile = "3.27.0"

@@ -19,6 +19,9 @@ Lo que tiene que quedar **igual** para que los servidores creados con la 0.0.1 s
 | `php.ini` (PocketMine, Linux) | sin líneas `extension_dir…` y con la nueva al final | |
 | `.omh/console.log` | UTF-8, añadiendo, `[omh] ` delante de los mensajes propios | |
 
+En **Windows**, Python escribe todos esos archivos de texto con `
+` (modo texto); Rust hace lo mismo (`util::write_text`), comprobado con los archivos reales de `mc-vanilla-1.14.1`.
+
 ## Comportamiento
 - Mismos comandos, opciones, opciones cortas, valores por defecto, preguntas y validaciones.
 - Mismos textos (sin tildes), mismas sangrías y mismo título ASCII → [[Mensajes y titulo]].
@@ -33,3 +36,6 @@ Lo que tiene que quedar **igual** para que los servidores creados con la 0.0.1 s
 - Las trazas de Python, que pasan a `[ERROR]` claros.
 - `User-Agent` y `--version` llevan `0.1.0`.
 - `omh update` descarga un binario en vez de `omh.py` → [[Distribucion del binario]].
+- La salida por pantalla redirigida a un archivo en Windows: Python escribia `
+` y Rust escribe `
+` (en la consola se ve igual).

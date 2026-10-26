@@ -1,4 +1,7 @@
-# Python
+# Rust
+/target/
+
+# Python (legacy/omh.py)
 __pycache__/
 *.pyc
 
@@ -23,3 +26,9 @@ logs/
 *.pem
 *.toml
 playit*
+
+# El manifiesto de Rust si se sube (la regla *.toml de arriba lo ignoraria)
+!/Cargo.toml
+
+# Configuracion local de Obsidian si se abre la raiz del repositorio como boveda
+/.obsidian/
