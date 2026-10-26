@@ -13,10 +13,6 @@
 //! Despues: omh start
 //! ```
 
-// Durante la migracion por fases hay piezas ya portadas que todavia no usa ningun
-// comando. Se quita en la fase 5, cuando estan conectados todos.
-#![allow(dead_code)]
-
 mod catalog;
 mod cli;
 mod config;
@@ -36,6 +32,7 @@ mod runner;
 mod servers;
 mod system;
 mod ui;
+mod update;
 mod util;
 
 use std::process::ExitCode;
@@ -48,6 +45,7 @@ pub const GITHUB_REPO: &str = "IzanLey/OPEN-MINECRAFT-HOST";
 
 fn main() -> ExitCode {
     ui::install_ctrlc_handler();
+    update::cleanup_old_binary();
     let Some(command) = cli::parse().command else {
         ui::print_title();
         ui::print_guide();
@@ -63,18 +61,26 @@ fn main() -> ExitCode {
 }
 
 fn run(command: Command) -> anyhow::Result<()> {
+    use runner::commands;
     match command {
         Command::Create(args) => create::cmd_create(&args),
-        Command::List => catalog::cmd_list(),
         Command::Resources(args) => resources::cmd_resources(&args),
         Command::Network(args) => network::cmd_network(&args),
+        Command::Start(args) => commands::cmd_start(&args),
+        Command::Stop(args) => commands::cmd_stop(&args),
+        Command::Restart(args) => commands::cmd_restart(&args),
+        Command::Status(args) => commands::cmd_status(&args),
+        Command::Console(args) => commands::cmd_console(&args),
+        Command::Logs(args) => commands::cmd_logs(&args),
+        Command::Cmd(args) => commands::cmd_cmd(&args),
         Command::Whitelist(args) => players::cmd_whitelist(&args),
         Command::Admin(args) => players::cmd_admin(&args),
-        Command::Tunnel(_) => network::tunnel::cmd_tunnel(),
-        Command::Eula(args) => create::cmd_eula(&args),
         Command::Plugin(args) => plugins::cmd_plugin(&args),
+        Command::Eula(args) => create::cmd_eula(&args),
+        Command::Tunnel(_) => network::tunnel::cmd_tunnel(),
+        Command::List => catalog::cmd_list(),
         Command::Servers => servers::cmd_servers(),
         Command::Use(args) => servers::cmd_use(&args.target),
-        _ => Err(error::fail("Este comando aun no esta portado a Rust.")),
+        Command::Update => update::cmd_update(),
     }
 }

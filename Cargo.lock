@@ -1086,6 +1086,7 @@ dependencies = [
  "ctrlc",
  "dirs",
  "flate2",
+ "getrandom 0.4.3",
  "libc",
  "md-5",
  "regex",
