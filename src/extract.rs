@@ -248,7 +248,9 @@ fn make_symlink(link: &Path, target: &Path) -> anyhow::Result<()> {
 /// puede se copia el archivo al que apunta.
 #[cfg(windows)]
 fn make_symlink(link: &Path, target: &Path) -> anyhow::Result<()> {
-    if std::os::windows::fs::symlink_file(link, target).is_ok() {
+    // Windows solo resuelve enlaces relativos escritos con `\`.
+    let native: PathBuf = link.to_string_lossy().replace('/', "\\").into();
+    if std::os::windows::fs::symlink_file(&native, target).is_ok() {
         return Ok(());
     }
     let source = target.parent().unwrap_or(Path::new(".")).join(link);
