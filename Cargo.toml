@@ -1,0 +1,47 @@
+[package]
+name = "open-mc-host"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "Convierte tu PC en un servidor de Minecraft (Java o Bedrock) desde la terminal"
+license = "MIT"
+repository = "https://github.com/IzanLey/OPEN-MINECRAFT-HOST"
+readme = "README.md"
+publish = false
+
+[[bin]]
+name = "omh"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+clap = { version = "4.6.7", features = ["derive"] }
+ctrlc = "3.5.2"
+dirs = "7.0.0"
+flate2 = "1.1.10"
+getrandom = "0.4.3"
+md-5 = "0.11.0"
+regex = "1.13.1"
+reqwest = { version = "0.13.5", features = ["blocking", "json"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+sha1 = "0.11.0"
+sha2 = "0.11.1"
+tar = "0.4.46"
+thiserror = "2.0.21"
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[target."cfg(unix)".dependencies]
+libc = "0.2.191"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_Storage_FileSystem"] }

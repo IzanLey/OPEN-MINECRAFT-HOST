@@ -1,0 +1,27 @@
+# Rust
+/target/
+
+# Servidores, mundos y datos locales (nunca se suben)
+servers/
+mc-*/
+.omh/
+omh.json
+state.json
+world*/
+logs/
+*.jar
+*.phar
+*.zip
+*.tar.gz
+*.part
+
+# Configuracion y secretos locales
+.env
+*.env
+*.key
+*.pem
+*.toml
+playit*
+
+# El manifiesto de Rust si se sube (la regla *.toml de arriba lo ignoraria)
+!/Cargo.toml
