@@ -23,9 +23,11 @@ Rama `rust-rewrite`, un commit por fase. Al terminar cada fase: `cargo build`, `
 - [x] **Fase 4: network + tunnel**
   - `network/` (puertos, IPs, direcciones, propiedades), `upnp.rs`, `tunnel.rs`, `players.rs` (`omh network` añade admins y whitelist) con `omh whitelist` y `omh admin`.
   - Tests: puertos libres (`need_next`, excluidos), UUID offline, archivos de jugadores, SOAP generado.
-- [ ] **Fase 5: runner**
+- [x] **Fase 5: runner**
   - `runner/` (supervisor, canal de control, afinidad), `start`, `stop`, `restart`, `status`, `console`, `logs`, `cmd`.
   - Tests: protocolo de control (ping, cmd, token incorrecto), `run.json`, compatibilidad con un supervisor Python.
-- [ ] **Entrega**
+- [x] **Entrega**
   - `omh update`, workflows de [[CI y releases]], instaladores ([[Distribucion del binario]]), README 0.1.0.
   - Prueba real ([[Plan de pruebas]]) y PR con resumen y pendientes.
+  - Hecho: prueba real paper + vanilla en Linux (WSL, Java 25): OK.
+  - Hecho: tests en Windows (CI): OK (fmt, clippy, tests y release en verde).
