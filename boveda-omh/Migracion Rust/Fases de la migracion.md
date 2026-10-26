@@ -17,10 +17,10 @@ Rama `rust-rewrite`, un commit por fase. Al terminar cada fase: `cargo build`, `
   - `http.rs` (descargas con sha1/sha256), `extract.rs`, `java.rs`, `catalog.rs`, `cores/` (los 9).
   - Además `omh plugin`, porque usa las mismas piezas (HTTP, catálogo).
   - Tests: extracción segura (zip/tar con `../`, rutas absolutas, enlaces), `resolve_version` sin red, verificación de hash.
-- [ ] **Fase 3: resources**
+- [x] **Fase 3: resources**
   - RAM, CPUs y disco nativos en `platform.rs`; `resources.rs`.
   - Tests: sugerencia de RAM, validaciones.
-- [ ] **Fase 4: network + tunnel**
+- [x] **Fase 4: network + tunnel**
   - `network/` (puertos, IPs, direcciones, propiedades), `upnp.rs`, `tunnel.rs`, `players.rs` (`omh network` añade admins y whitelist) con `omh whitelist` y `omh admin`.
   - Tests: puertos libres (`need_next`, excluidos), UUID offline, archivos de jugadores, SOAP generado.
 - [ ] **Fase 5: runner**

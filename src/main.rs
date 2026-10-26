@@ -26,7 +26,9 @@ mod error;
 mod extract;
 mod http;
 mod java;
+mod network;
 mod platform;
+mod players;
 mod plugins;
 mod pyjson;
 mod resources;
@@ -65,6 +67,10 @@ fn run(command: Command) -> anyhow::Result<()> {
         Command::Create(args) => create::cmd_create(&args),
         Command::List => catalog::cmd_list(),
         Command::Resources(args) => resources::cmd_resources(&args),
+        Command::Network(args) => network::cmd_network(&args),
+        Command::Whitelist(args) => players::cmd_whitelist(&args),
+        Command::Admin(args) => players::cmd_admin(&args),
+        Command::Tunnel(_) => network::tunnel::cmd_tunnel(),
         Command::Eula(args) => create::cmd_eula(&args),
         Command::Plugin(args) => plugins::cmd_plugin(&args),
         Command::Servers => servers::cmd_servers(),

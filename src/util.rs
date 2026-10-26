@@ -462,6 +462,19 @@ pub fn urlencode(pairs: &[(&str, &str)]) -> String {
         .join("&")
 }
 
+/// Ultimas lineas de un archivo de texto (`tail_lines` de Python, con la misma
+/// semantica de `lista[-n:]`). Si no se puede leer, ninguna.
+pub fn tail_lines(path: &Path, count: i64) -> Vec<String> {
+    read_text_lossy(path)
+        .map(|text| {
+            py_tail(&py_splitlines(&text), count)
+                .iter()
+                .map(|line| (*line).to_owned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
