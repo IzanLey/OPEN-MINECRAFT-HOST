@@ -197,13 +197,7 @@ struct NetworkState {
 
 fn ports_to_open(cfg: &ServerConfig) -> Vec<u16> {
     cfg.network()
-        .map(|n| {
-            [Some(n.port), n.port_v6]
-                .into_iter()
-                .flatten()
-                .filter(|&p| p != 0)
-                .collect()
-        })
+        .map(|n| [Some(n.port), n.port_v6].into_iter().flatten().collect())
         .unwrap_or_default()
 }
 
