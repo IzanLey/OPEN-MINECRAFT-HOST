@@ -38,7 +38,14 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Tests
-        run: cargo test
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! cargo test --no-fail-fast 2>&1 | tee test.log; then
+            # Muestra los fallos como anotaciones para verlos sin abrir el log.
+            grep -E "panicked at|^---- .* stdout ----|left:|right:|os error" test.log | head -20 | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
 
       - name: Compilar en release
         run: cargo build --release
