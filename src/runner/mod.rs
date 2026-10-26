@@ -197,8 +197,18 @@ struct NetworkState {
 
 fn ports_to_open(cfg: &ServerConfig) -> Vec<u16> {
     cfg.network()
-        .map(|n| [Some(n.port), n.port_v6].into_iter().flatten().collect())
+        .map(|n| ports_of(n.port, n.port_v6))
         .unwrap_or_default()
+}
+
+/// Puertos que se abren en el router. `port_v6` a 0 significa "elige uno libre",
+/// no un puerto que abrir, igual que en Python.
+fn ports_of(port: u16, port_v6: Option<u16>) -> Vec<u16> {
+    [Some(port), port_v6]
+        .into_iter()
+        .flatten()
+        .filter(|&p| p != 0)
+        .collect()
 }
 
 fn protocol(cfg: &ServerConfig) -> &'static str {
@@ -761,6 +771,14 @@ mod tests {
         assert!(!same_token("abd", "abc"));
         assert!(!same_token("ab", "abc"));
         assert_eq!(new_token().unwrap().len(), 32);
+    }
+
+    #[test]
+    fn puertos_del_router_sin_el_cero() {
+        assert_eq!(ports_of(25565, None), vec![25565]);
+        assert_eq!(ports_of(25565, Some(25566)), vec![25565, 25566]);
+        assert_eq!(ports_of(25565, Some(0)), vec![25565]);
+        assert!(ports_of(0, Some(0)).is_empty());
     }
 
     #[test]
