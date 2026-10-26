@@ -44,7 +44,10 @@ fn client(timeout_secs: u64) -> anyhow::Result<Client> {
     }
     let timeout = Duration::from_secs(timeout_secs);
     // En el cliente bloqueante `timeout` vale para cada operacion (enviar y cada
-    // lectura), no para la descarga entera.
+    // lectura), no para la descarga entera: reqwest lo espera aparte por cada
+    // `read` (`Response::read`), como el timeout de socket de urllib. Por eso una
+    // descarga grande y lenta no se corta (D10). El cliente bloqueante no expone
+    // `read_timeout` (solo el asincrono), asi que aqui `.timeout` hace ese papel.
     let client = Client::builder()
         .user_agent(user_agent())
         .connect_timeout(timeout)

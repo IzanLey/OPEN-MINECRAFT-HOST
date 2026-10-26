@@ -47,6 +47,15 @@ fn asset_url<'a>(release: &'a Value, name: &str) -> Option<&'a str> {
 }
 
 pub fn cmd_update() -> anyhow::Result<()> {
+    // ASSET se elige solo por sistema operativo: en otra arquitectura se
+    // descargaria el binario x86_64 y se sobrescribiria a si mismo.
+    if env::consts::ARCH != "x86_64" {
+        return Err(fail(format!(
+            "omh update solo funciona en equipos x86_64 (este es {}). Descarga el binario a mano desde https://github.com/{}/releases.",
+            env::consts::ARCH,
+            crate::GITHUB_REPO
+        )));
+    }
     let release = http::github_latest_release(crate::GITHUB_REPO)?;
     let url = asset_url(&release, ASSET).ok_or_else(|| {
         fail(format!(

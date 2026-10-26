@@ -135,7 +135,20 @@ fn follow(path: std::path::PathBuf, stop: Arc<AtomicBool>) {
     let mut chunk = [0u8; 8192];
     while !stop.load(Ordering::SeqCst) {
         match file.read(&mut chunk) {
-            Ok(0) | Err(_) => thread::sleep(Duration::from_millis(300)),
+            // Como `readline()` de Python al llegar al final del archivo: una
+            // linea sin salto de linea pendiente tambien se imprime.
+            Ok(0) => {
+                if !pending.is_empty() {
+                    let text = String::from_utf8_lossy(&pending);
+                    let mut out = io::stdout();
+                    let _ = writeln!(out, "{}", text.trim_end_matches(['\r', '\n']));
+                    let _ = out.flush();
+                    pending.clear();
+                }
+                thread::sleep(Duration::from_millis(300));
+            }
+            // Python ignora los errores de lectura y sigue esperando.
+            Err(_) => thread::sleep(Duration::from_millis(300)),
             Ok(n) => {
                 pending.extend_from_slice(&chunk[..n]);
                 while let Some(end) = pending.iter().position(|&b| b == b'\n') {

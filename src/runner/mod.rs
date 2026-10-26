@@ -197,7 +197,13 @@ struct NetworkState {
 
 fn ports_to_open(cfg: &ServerConfig) -> Vec<u16> {
     cfg.network()
-        .map(|n| [Some(n.port), n.port_v6].into_iter().flatten().collect())
+        .map(|n| {
+            [Some(n.port), n.port_v6]
+                .into_iter()
+                .flatten()
+                .filter(|&p| p != 0)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -227,7 +233,10 @@ fn start_network(shared: &Shared) -> anyhow::Result<NetworkState> {
                 .try_for_each(|port| upnp::add(&gateway, port, protocol(cfg), &description));
             match opened {
                 Ok(()) => {
+                    // Un router sin WAN puede devolver ""; como en Python, cuenta
+                    // como vacio y se prueba la IP publica.
                     let ip = upnp::external_ip(&gateway)
+                        .filter(|ip| !ip.is_empty())
                         .or_else(public_ip)
                         .unwrap_or_else(|| "?".to_owned());
                     shared.say(&format!(
@@ -518,6 +527,15 @@ fn write_run_file(cfg: &ServerConfig, port: u16, token: &str, pid: u32) -> anyho
         .open(&path)
         .with_context(|| format!("No se pudo escribir {}", path.display()))?;
     file.write_all(pyjson::to_compact(&run)?.as_bytes())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        // Python hace chmod siempre: `mode` solo se aplica al crear el archivo.
+        file.set_permissions(fs::Permissions::from_mode(0o600))
+            .with_context(|| {
+                format!("No se pudieron ajustar los permisos de {}", path.display())
+            })?;
+    }
     Ok(())
 }
 
@@ -537,7 +555,8 @@ pub fn run(cfg: &ServerConfig, daemon: bool) -> anyhow::Result<()> {
         .with_context(|| format!("No se pudo crear {}", run_dir.display()))?;
     let log_path = run_dir.join("console.log");
     if fs::metadata(&log_path).is_ok_and(|meta| meta.len() > 5 * MB) {
-        let _ = fs::rename(&log_path, run_dir.join("console.old.log"));
+        fs::rename(&log_path, run_dir.join("console.old.log"))
+            .with_context(|| format!("No se pudo rotar {}", log_path.display()))?;
     }
     let log = OpenOptions::new()
         .create(true)
@@ -570,10 +589,21 @@ pub fn run(cfg: &ServerConfig, daemon: bool) -> anyhow::Result<()> {
         std::process::exit(130);
     }
 
-    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
-        .context("No se pudo abrir el canal de control")?;
+    let listener = match TcpListener::bind((Ipv4Addr::LOCALHOST, 0)) {
+        Ok(listener) => listener,
+        Err(err) => {
+            stop_network(cfg, &mut network_state);
+            return Err(err).context("No se pudo abrir el canal de control");
+        }
+    };
     let control_port = listener.local_addr()?.port();
-    let (reader, writer) = io::pipe().context("No se pudo preparar la consola del servidor")?;
+    let (reader, writer) = match io::pipe() {
+        Ok(pipe) => pipe,
+        Err(err) => {
+            stop_network(cfg, &mut network_state);
+            return Err(err).context("No se pudo preparar la consola del servidor");
+        }
+    };
     command
         .stdin(Stdio::piped())
         .stdout(writer.try_clone()?)
