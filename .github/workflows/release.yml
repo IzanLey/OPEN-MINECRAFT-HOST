@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Compilar Linux (musl)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v7
+
+      - name: Instalar toolchain de Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Cachear dependencias de Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Instalar musl-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Compilar binario estatico
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Preparar el asset
+        run: cp target/x86_64-unknown-linux-musl/release/omh omh-linux-x86_64
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v7
+        with:
+          name: omh-linux
+          path: omh-linux-x86_64
+          if-no-files-found: error
+          retention-days: 1
+
+  build-windows:
+    name: Compilar Windows (crt estatico)
+    runs-on: windows-latest
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v7
+
+      - name: Instalar toolchain de Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cachear dependencias de Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar con CRT estatico
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Preparar el asset
+        shell: bash
+        run: cp target/x86_64-pc-windows-msvc/release/omh.exe omh-windows-x86_64.exe
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v7
+        with:
+          name: omh-windows
+          path: omh-windows-x86_64.exe
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Publicar release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows]
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar artefacto de Linux
+        uses: actions/download-artifact@v7
+        with:
+          name: omh-linux
+          path: dist
+
+      - name: Descargar artefacto de Windows
+        uses: actions/download-artifact@v7
+        with:
+          name: omh-windows
+          path: dist
+
+      - name: Generar SHA256SUMS
+        run: cd dist && sha256sum omh-linux-x86_64 omh-windows-x86_64.exe > SHA256SUMS
+
+      - name: Publicar release
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" omh-linux-x86_64 omh-windows-x86_64.exe SHA256SUMS --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY"

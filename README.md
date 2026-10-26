@@ -20,11 +20,11 @@
                     |_| |_| \___/ |____/  |_|
 ```
 
-Version 0.0.1
+Version 0.1.0
 
 Herramienta de terminal para convertir tu PC en un servidor de Minecraft.
-Funciona en Windows y Linux. Es un solo archivo de Python (`omh.py`) que solo
-usa la libreria estandar, asi que no hay que instalar dependencias.
+Funciona en Windows y Linux. Es un solo binario (`omh` / `omh.exe`) escrito en
+Rust, sin dependencias y sin necesidad de Python.
 
 Todo se descarga desde las fuentes oficiales de cada proyecto (Mojang, PaperMC,
 Fabric, Forge, NeoForge, PocketMine, PowerNukkitX, Adoptium) y, cuando la fuente
@@ -33,10 +33,10 @@ publica un hash, se comprueba antes de usar el archivo.
 
 ## Requisitos
 
-- Windows 10/11 o Linux de 64 bits.
-- Python 3.8 o superior.
-  - Windows: `winget install Python.Python.3.12` o https://www.python.org/downloads/
-  - Debian/Ubuntu: `sudo apt install python3`
+- Windows 10/11 o Linux de 64 bits (x86_64).
+- No hay que instalar nada mas: el binario ya incluye todo lo que necesita.
+  - Windows: `omh.exe`
+  - Linux: `omh`
 - Java NO hace falta instalarlo: la herramienta descarga automaticamente la
   version correcta (Eclipse Temurin) para cada version de Minecraft.
 
@@ -55,18 +55,31 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/IzanLey/OPEN-MINECRAFT-HOST/main/install.ps1 | iex
 ```
 
-El instalador copia `omh.py` en tu carpeta de usuario, crea el comando `omh` y
-muestra el titulo con la guia del primer paso.
+El instalador descarga el binario de la ultima release y lo deja listo para
+usar: en Linux en `~/.local/bin/omh`; en Windows en
+`%LOCALAPPDATA%\open-mc-host\omh.exe` y anade esa carpeta al PATH del usuario.
+Al terminar muestra el titulo con la guia del primer paso.
 
-Tambien puedes usarlo sin instalar nada:
+Si prefieres descargarlo a mano, los binarios estan en las Releases:
+https://github.com/IzanLey/OPEN-MINECRAFT-HOST/releases
+
+Si tenias la version Python (0.0.1), `omh update` ya no funciona: descargaba
+`omh.py`, que ya no existe en `main`. Vuelve a ejecutar el instalador de arriba
+para pasar al binario nuevo.
+
+
+## Compilar desde el codigo fuente
+
+Con Rust 1.88 o superior:
 
 ```bash
 git clone https://github.com/IzanLey/OPEN-MINECRAFT-HOST.git
 cd OPEN-MINECRAFT-HOST
-python omh.py
+cargo build --release
 ```
 
-(En Linux usa `python3` en lugar de `python`.)
+El binario queda en `target/release/omh` (`omh.exe` en Windows). Si quieres un
+binario estatico en Linux, compila con el objetivo `x86_64-unknown-linux-musl`.
 
 
 ## Uso: los 3 comandos
@@ -213,13 +226,6 @@ En Minecraft: Multijugador -> Anadir servidor -> escribe la direccion:
 En redes de instituto, universidad, trabajo o wifis publicas los dispositivos
 no suelen poder verse entre si. En ese caso usa la direccion de playit.gg
 aunque esteis conectados a la misma wifi.
-- `upnp`: abre el puerto en tu router de forma automatica al iniciar y lo
-  cierra al parar. El router debe tener UPnP activado.
-- `manual`: abres tu el puerto en el router. Los jugadores usan tu IP publica.
-
-Si el firewall bloquea las conexiones, el comando muestra la orden exacta para
-permitir el puerto (hay que ejecutarla como administrador). La herramienta no
-cambia el firewall por su cuenta.
 
 
 ## Iniciar y administrar
@@ -328,6 +334,9 @@ omh update
 - "Outdated client" u "Outdated server": el jugador usa otra version de
   Minecraft. Debe usar la misma que el servidor.
 - "El puerto esta ocupado": usa `omh network --port auto`.
+- Windows con Smart App Control activado: puede bloquear `omh.exe` porque el
+  binario no esta firmado. Permite el archivo (o desactiva Smart App Control)
+  para poder ejecutarlo.
 - Windows y Bedrock vanilla: para entrar desde el mismo PC donde corre el
   servidor, Windows necesita una excepcion de loopback (como administrador):
   `CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-1958404141-86561845-1752920682-3514627264-368642714-62675701-733520436`
@@ -339,6 +348,14 @@ omh update
 
 ## Versiones
 
+- 0.1.0: reescritura en Rust. Mismo comportamiento y mismos archivos
+  (`omh.json`, `state.json`, `server.properties`...), sin Python. Corrige
+  fallos de la version anterior: la red a medias en `status` y `whitelist`;
+  `--cores 0` y `--max-players 0` se ignoraban; falso "puerto ocupado" en
+  Linux; afinidad con CPUs restringidas; Ctrl+C durante el arranque dejaba
+  restos; PowerNukkitX fallaba cuando la ruta contiene `/plugins/`; error de
+  red disfrazado al comprobar el UUID; README duplicado; y decia "Minecraft
+  Java" en servidores Bedrock.
 - 0.0.1: primera version. Servidores Java (vanilla, paper, purpur, fabric,
   forge, neoforge) y Bedrock (vanilla, pocketmine, nukkit), los 3 comandos de
   configuracion, whitelist, administradores, plugins/mods y tunel gratuito de
