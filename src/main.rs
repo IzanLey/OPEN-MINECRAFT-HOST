@@ -29,8 +29,10 @@ mod java;
 mod platform;
 mod plugins;
 mod pyjson;
+mod resources;
 mod runner;
 mod servers;
+mod system;
 mod ui;
 mod util;
 
@@ -62,6 +64,7 @@ fn run(command: Command) -> anyhow::Result<()> {
     match command {
         Command::Create(args) => create::cmd_create(&args),
         Command::List => catalog::cmd_list(),
+        Command::Resources(args) => resources::cmd_resources(&args),
         Command::Eula(args) => create::cmd_eula(&args),
         Command::Plugin(args) => plugins::cmd_plugin(&args),
         Command::Servers => servers::cmd_servers(),
