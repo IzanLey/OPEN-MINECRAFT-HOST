@@ -1,0 +1,30 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {"query": "tag:#omh/mapa", "color": {"a": 1, "rgb": 15066597}},
+    {"query": "tag:#omh/comando", "color": {"a": 1, "rgb": 5020415}},
+    {"query": "tag:#omh/archivo", "color": {"a": 1, "rgb": 15906891}},
+    {"query": "tag:#omh/api", "color": {"a": 1, "rgb": 3063173}},
+    {"query": "tag:#omh/core", "color": {"a": 1, "rgb": 14707829}},
+    {"query": "tag:#omh/concepto", "color": {"a": 1, "rgb": 11833005}},
+    {"query": "tag:#omh/migracion", "color": {"a": 1, "rgb": 16747586}}
+  ],
+  "collapse-display": true,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 180,
+  "scale": 1,
+  "close": false
+}
