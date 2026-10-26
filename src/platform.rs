@@ -2,11 +2,8 @@
 
 use std::env;
 use std::ffi::OsString;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
-
-use anyhow::Context;
 
 pub const IS_WIN: bool = cfg!(windows);
 
@@ -130,7 +127,10 @@ fn machine() -> String {
 pub fn make_executable(path: &Path) -> anyhow::Result<()> {
     #[cfg(unix)]
     {
+        use std::fs;
         use std::os::unix::fs::PermissionsExt;
+
+        use anyhow::Context;
 
         if let Ok(meta) = fs::metadata(path) {
             let mode = meta.permissions().mode() | 0o755;
