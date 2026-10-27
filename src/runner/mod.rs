@@ -754,11 +754,36 @@ pub fn spawn_daemon(cfg: &ServerConfig) -> anyhow::Result<()> {
     {
         use std::os::windows::process::CommandExt;
         command.creation_flags(CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW);
+        keep_std_handles_private();
     }
     command
         .spawn()
         .context("No se pudo iniciar omh en segundo plano")?;
     Ok(())
+}
+
+/// En Windows el hijo hereda todos los handles heredables del padre, no solo los
+/// que recibe como entrada y salida. Si la salida de `omh start --detach` va a una
+/// tuberia (un script, `| Select-Object`...), el supervisor la mantendria abierta y
+/// quien lee no terminaria nunca. Python lo evita con `close_fds=True` en `Popen`.
+#[cfg(windows)]
+fn keep_std_handles_private() {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Foundation::{HANDLE_FLAG_INHERIT, SetHandleInformation};
+
+    for handle in [
+        io::stdin().as_raw_handle(),
+        io::stdout().as_raw_handle(),
+        io::stderr().as_raw_handle(),
+    ] {
+        if !handle.is_null() {
+            // SAFETY: son los handles estandar de este proceso; si no admiten el
+            // cambio (por ejemplo, una consola antigua), la llamada falla sin mas.
+            unsafe {
+                SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
