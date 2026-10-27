@@ -344,6 +344,10 @@ omh update
   distribuciones puede faltar alguna libreria (por ejemplo `libcurl`).
 - Forge y NeoForge: la instalacion tarda unos minutos. Si falla, revisa
   `<carpeta del servidor>/.omh/installer.log`.
+- Si cierras la ventana de la terminal con el servidor dentro, Windows lo corta
+  sin guardar el mundo y `omh logs` termina con `codigo 1073807364`. Para
+  cerrarlo bien escribe `stop` en la consola o pulsa Ctrl+C; si esta en segundo
+  plano, usa `omh stop`.
 
 
 ## Versiones

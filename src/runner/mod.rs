@@ -270,6 +270,7 @@ fn start_network(shared: &Shared) -> anyhow::Result<NetworkState> {
             {
                 use std::os::windows::process::CommandExt;
                 command.creation_flags(CREATE_NO_WINDOW);
+                keep_std_handles_private();
             }
             state.extra.push(
                 command
